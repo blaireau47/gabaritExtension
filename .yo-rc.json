@@ -1,0 +1,8 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "version": "1.4.1",
+    "libraryName": "gabarit-extension",
+    "libraryId": "eb3fcaad-3dc6-4d83-95f2-713e04f47b52",
+    "environment": "spo"
+  }
+}
