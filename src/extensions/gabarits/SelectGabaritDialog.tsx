@@ -1,6 +1,12 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { BaseDialog, IDialogConfiguration } from '@microsoft/sp-dialog';
+import { 
+  SPHttpClient, ISPHttpClientOptions, 
+  SPHttpClientResponse, IHttpClientOptions,
+  HttpClientResponse, 
+  HttpClient } from 
+  '@microsoft/sp-http';
 import {
   Label,
   PrimaryButton,
@@ -22,6 +28,9 @@ import { MarqueeSelection } from 'office-ui-fabric-react/lib/MarqueeSelection';
 import { autobind } from 'office-ui-fabric-react/lib/Utilities';
 
 import { Dialog } from '@microsoft/sp-dialog';
+
+import pnp from "sp-pnp-js";
+import { Web } from  "sp-pnp-js";
 
 const _items: any[] = [];
 
@@ -59,7 +68,7 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
   private _gabaritName: string;
   public newFileName: string;
   private _selection: Selection;
-
+private urlTemplateLibrary: string;
 
   
 
@@ -88,6 +97,32 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
       selectionDetails: this._getSelectionDetails()
     };
 
+    this.context.spHttpClient.get(`${this.context.pageContext.web.absoluteUrl}/_api/web/GetStorageEntity('TemplatesRepoKey')`,SPHttpClient.configurations.v1).then((response:SPHttpClientResponse) => {
+      response.json().then((responseJson:any) => {  
+
+         
+        this.urlTemplateLibrary = responseJson.Value;
+        alert(this.urlTemplateLibrary);
+
+        if ( typeof this.urlTemplateLibrary != 'undefined' && this.urlTemplateLibrary){
+        
+          let webTemplate = new Web(this.urlTemplateLibrary)
+          
+          //Retrieve document template
+          
+          webTemplate.getFolderByServerRelativeUrl("/templates").files
+            .expand('Files/ListItemAllFields') // For Metadata extraction
+            .select('Title,Name')              // Fields to retrieve
+            .get().then(function(item) {
+              _items[0].name = "ererer";
+            });     
+          
+
+        }else{Dialog.alert('urlTemplateLibrary is empty');}      
+      });
+    });  
+    
+    alert(_items[0].name);
 
 
   }
