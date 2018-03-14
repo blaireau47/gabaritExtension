@@ -32,11 +32,11 @@ import { Dialog } from '@microsoft/sp-dialog';
 import pnp from "sp-pnp-js";
 import { Web } from  "sp-pnp-js";
 
-const _items: any[] = [];
+const _gabarits: any[] = [];
 
 const _columns: IColumn[] = [
   {
-    key: 'Gabarit',
+    key: 'name',
     name: 'Name',
     fieldName: 'name',
     minWidth: 100,
@@ -45,7 +45,7 @@ const _columns: IColumn[] = [
     ariaLabel: 'Operations for name'
   },
   {
-    key: 'column2',
+    key: 'value',
     name: 'Value',
     fieldName: 'value',
     minWidth: 100,
@@ -58,90 +58,82 @@ const _columns: IColumn[] = [
 
 interface IGabaritContentProps {
   message: string;
-  newFileName: string;
+  urlTemplateLibrary: string;
   close: () => void;
   submit: (filename: string, gabarit: string) => void;
-  defaultGabarit?: string;
 }
 
-class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {items: {}[];selectionDetails: {};}>{
-  private _gabaritName: string;
+class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {gabarits: {}[];selectionDetails: {};}>{
+  public selectedGabaritName: string;
   public newFileName: string;
   private _selection: Selection;
-private urlTemplateLibrary: string;
-
-  
-
-  
+  private urlWebTemplateLibrary: string;
 
   constructor(props){
     super(props);
-    //this.newFileName = "yyyyyy";    
-
-    if (_items.length === 0) {
-      for (let i = 0; i < 200; i++) {
-        _items.push({
+      
+    if (_gabarits.length === 0) {
+      for (let i = 0; i < 5; i++) {
+        _gabarits.push({
           key: i,
           name: 'Item ' + i,
           value: i
         });
       }
     }
-
+    console.log(_gabarits);
     this._selection = new Selection({
       onSelectionChanged: () => this.setState({ selectionDetails: this._getSelectionDetails() })
     });
 
-    this.state = {
-      items: _items,
-      selectionDetails: this._getSelectionDetails()
-    };
 
-    this.context.spHttpClient.get(`${this.context.pageContext.web.absoluteUrl}/_api/web/GetStorageEntity('TemplatesRepoKey')`,SPHttpClient.configurations.v1).then((response:SPHttpClientResponse) => {
-      response.json().then((responseJson:any) => {  
-
-         
-        this.urlTemplateLibrary = responseJson.Value;
-        alert(this.urlTemplateLibrary);
-
-        if ( typeof this.urlTemplateLibrary != 'undefined' && this.urlTemplateLibrary){
-        
-          let webTemplate = new Web(this.urlTemplateLibrary)
-          
-          //Retrieve document template
-          
-          webTemplate.getFolderByServerRelativeUrl("/templates").files
-            .expand('Files/ListItemAllFields') // For Metadata extraction
-            .select('Title,Name')              // Fields to retrieve
-            .get().then(function(item) {
-              _items[0].name = "ererer";
-            });     
-          
-
-        }else{Dialog.alert('urlTemplateLibrary is empty');}      
-      });
-    });  
     
-    alert(_items[0].name);
+    this.urlWebTemplateLibrary = this.props.urlTemplateLibrary;
+    console.log("Retrieving templates from web " + this.urlWebTemplateLibrary)
+    if ( typeof this.urlWebTemplateLibrary != 'undefined' && this.urlWebTemplateLibrary){
+    
+      let webTemplate = new Web(this.urlWebTemplateLibrary)
+      
+
+      console.log("Retrieving templates form library at "+ this.urlWebTemplateLibrary);
+
+      webTemplate.getFolderByServerRelativeUrl('/sites/templates/templates') // Here comes a folder/subfolder path
+      .files
+      .expand('Files/ListItemAllFields') // For Metadata extraction
+      .select('Name')              // Fields to retrieve
+      .get().then(function(docTemplates) {
+          if (docTemplates.length != 0) {
+            for (let docTemplate of   docTemplates) {
+              console.log("doc template name " + docTemplate.Name);
+              _gabarits.push({
+                key: docTemplate.Id,
+                name: docTemplate.Name,
+                value: docTemplate.Name
+              });
+              console.log("_items pushd has  " + _gabarits.length);
+            }
+          }
+      }); 
+      
+      this.state = {
+        gabarits: _gabarits,
+        selectionDetails: this._getSelectionDetails()
+      };
+
+    }else{console.log('urlTemplateLibrary is empty please configure tenant Key');}      
+    console.log(this.state.gabarits);      
+    console.log(_gabarits.length);
 
 
   }
   
-
-
-
   private HandleFileNameChange = (event) => {   
     this.newFileName = event.target.value;      
   }
 
-
-
-
-
-
   public render(): JSX.Element {
-    const { items } = this.state;
-
+    const { gabarits } = this.state;
+    console.log("binding selectect list with gabarits " + gabarits)
     return <DialogContent
       title='Select Gabarit'
       subText={this.props.message}
@@ -156,29 +148,22 @@ private urlTemplateLibrary: string;
         onChange={this.HandleFileNameChange}
         type="text"        
       />
-         <TextField
-          label='Filter by name:'
-         
+      <MarqueeSelection selection={this._selection}>
+        <DetailsList
+          items={ gabarits }
+          columns={ _columns }
+          setKey='set'
+          layoutMode={ DetailsListLayoutMode.fixedColumns }
+          selection={ this._selection }
+          selectionPreservedOnEmptyClick={ true }
+          ariaLabelForSelectionColumn='Toggle selection'
+          ariaLabelForSelectAllCheckbox='Toggle selection for all items'
+          onItemInvoked={ this._onItemInvoked }
         />
-
-        <MarqueeSelection selection={this._selection}>
-          <DetailsList
-            items={ items }
-            columns={ _columns }
-            setKey='set'
-            layoutMode={ DetailsListLayoutMode.fixedColumns }
-            selection={ this._selection }
-            selectionPreservedOnEmptyClick={ true }
-            ariaLabelForSelectionColumn='Toggle selection'
-            ariaLabelForSelectAllCheckbox='Toggle selection for all items'
-            onItemInvoked={ this._onItemInvoked }
-          />
-        </MarqueeSelection>
-      
-      
+      </MarqueeSelection>            
       <DialogFooter>
         <Button text='Cancel' title='Cancel' onClick={this.props.close} />
-        <PrimaryButton text='OK' title='OK' onClick={() => { this.props.submit(this.newFileName,this.newFileName); }} />
+        <PrimaryButton text='OK' title='OK' onClick={() => { this.props.submit(this.newFileName,this.selectedGabaritName); }} />
       </DialogFooter>
     </DialogContent>;
   }
@@ -189,22 +174,22 @@ private urlTemplateLibrary: string;
 
     switch (selectionCount) {
       case 0:
+        this.selectedGabaritName = undefined;
         return 'No items selected';
       case 1:
-        return '1 item selected: ' + (this._selection.getSelection()[0] as any).name;
+        this.selectedGabaritName = (this._selection.getSelection()[0] as any).value;
+        return (this._selection.getSelection()[0] as any).value;
       default:
+        this.selectedGabaritName = undefined;
         return `${selectionCount} items selected`;
     }
   }
 
   private _onItemInvoked(item: any): void {
-    alert(`Item invoked: ${item.name}`);
+    console.log(`Item invoked: ${item.name}`);
   }
 
-  //@autobind
-  //private _onColorChange(color: string): void {
-  //  this._pickedColor = color;
-  //}
+
 }
 
 
@@ -212,12 +197,13 @@ export default class SelectGabaritDialog extends BaseDialog {
   public message: string;
   public gabaritName: string;
   public fileName: string;
+  public urlTemplateLibrary: string;
 
   public render(): void {
     ReactDOM.render(<GabaritPickerDialogContent
-      close={this.close}
-      message={this.message}
-      newFileName={this.gabaritName}
+      close={this.close}     
+      urlTemplateLibrary = {this.urlTemplateLibrary}
+      message={this.message}      
       submit={this._submit}
     />, this.domElement);
   }
@@ -229,7 +215,7 @@ export default class SelectGabaritDialog extends BaseDialog {
   }
 
   @autobind
-  private _submit(_fileName: string, _gabName: string): void {
+  private _submit(_fileName: string, _gabName: string): void {    
     this.gabaritName = _gabName;
     this.fileName = _fileName;
     this.close();

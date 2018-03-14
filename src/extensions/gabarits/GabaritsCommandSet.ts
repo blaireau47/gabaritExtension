@@ -36,7 +36,7 @@ export interface IGabaritsCommandSetProperties {
 const LOG_SOURCE: string = 'GabaritsCommandSet';
 
 export default class GabaritsCommandSet extends BaseListViewCommandSet<IGabaritsCommandSetProperties> {
-  private urlTemplateLibrary: string = '';
+  private urlWebTemplateLibrary: string = '';
   
   @override
   public onInit(): Promise<void> {
@@ -58,52 +58,56 @@ export default class GabaritsCommandSet extends BaseListViewCommandSet<IGabarits
     switch (event.itemId) {
       case 'COMMAND_1':
 
+        Dialog.alert("One document selected");
         
-        //Dialog.prompt(`patate`).then((value2: string)=>{Dialog.alert(value2);});
         break;
       case 'COMMAND_2':
+       
+        this.context.spHttpClient.get(`${this.context.pageContext.web.absoluteUrl}/_api/web/GetStorageEntity('TemplatesRepoKey')`,SPHttpClient.configurations.v1).then((response:SPHttpClientResponse) => {
+          response.json().then((responseJson:any) => { 
+           
+            this.urlWebTemplateLibrary = responseJson.Value;
+            console.log(`Template library : ${this.urlWebTemplateLibrary}`);
 
-        const dialog: SelectGabaritDialog = new SelectGabaritDialog();
-        dialog.message = 'Select template:';
-        //dialog.gabaritName = "Patate";
-        
-        
-        dialog.show().then(() => {
-          //this._colorCode = dialog.colorCode;
-          Dialog.alert(`New Document name: ${dialog.gabaritName}`);
-
-          this.context.spHttpClient.get(`${this.context.pageContext.web.absoluteUrl}/_api/web/GetStorageEntity('TemplatesRepoKey')`,SPHttpClient.configurations.v1).then((response:SPHttpClientResponse) => {
-            response.json().then((responseJson:any) => {      
-            console.log(LOG_SOURCE, responseJson);            
-            this.urlTemplateLibrary = responseJson.Value;
-            
-            if ( typeof this.urlTemplateLibrary != 'undefined' && this.urlTemplateLibrary){
-            
-              let webTemplate = new Web(this.urlTemplateLibrary)
+            if ( typeof this.urlWebTemplateLibrary != 'undefined' && this.urlWebTemplateLibrary){
+              const dialog: SelectGabaritDialog = new SelectGabaritDialog();
+              dialog.message = 'Select template:';
+              console.log(LOG_SOURCE, responseJson);                                           
+              dialog.urlTemplateLibrary =  this.urlWebTemplateLibrary;
+              dialog.show().then(() => { 
+                
               
-              //Retrieve document template
+                
+              if(typeof dialog.fileName != 'undefined' && dialog.fileName)
+              { 
+                dialog.gabaritName = "papate.docx";
+                  console.log("New document name is : " + dialog.fileName);      
+                  if ( typeof dialog.gabaritName != 'undefined' && dialog.gabaritName)
+                  {
+                    let webTemplate = new Web(this.urlWebTemplateLibrary)
+                    
+                    //Retrieve document template                    
+                    webTemplate.getFileByServerRelativeUrl(`/sites/templates/templates/${dialog.gabaritName}`).getBuffer().then((buffer:ArrayBuffer) => {      
+                      pnp.sp.web.getFolderByServerRelativeUrl("/Shared Documents/").files.add(`${dialog.fileName}.docx`,buffer,true).then(_=> Log.info(LOG_SOURCE,"done"));                     
+                      console.log(`${this.urlWebTemplateLibrary}`);                
+                      console.log(`template size ${buffer.byteLength}`);
+                    });
               
-              webTemplate.getFileByServerRelativeUrl("/templates/gabaritTest2.docx").getBuffer().then((buffer:
-              ArrayBuffer) => {      
-                pnp.sp.web.getFolderByServerRelativeUrl("/Shared%20Documents/").files.add(`${dialog.gabaritName}.docx`,buffer,
-                true).then(_=> Log.info(LOG_SOURCE,"done"));   
-              
-                Dialog.alert(`${this.urlTemplateLibrary}`);                
-              });
+                  }
+                  else{ Dialog.alert("No template was selected"); }
+              }
+              else{ Dialog.alert("No new document name was entered"); }
   
-            }else{Dialog.alert('urlTemplateLibrary is empty');}      
+              });
+            }
+            else{Dialog.alert("Unable to find template library. Please advise your Administrator");}           
           });
         });
 
-
-        
-        });
         break;
-      
       default:
         throw new Error('Unknown command');
     }
   }
-
-  
+ 
 }
