@@ -22,6 +22,7 @@ import {
   DetailsList,
   DetailsListLayoutMode,
   Selection,
+  SelectionMode,
   IColumn
 } from 'office-ui-fabric-react/lib/DetailsList';
 import { MarqueeSelection } from 'office-ui-fabric-react/lib/MarqueeSelection';
@@ -30,9 +31,10 @@ import { autobind } from 'office-ui-fabric-react/lib/Utilities';
 import { Dialog } from '@microsoft/sp-dialog';
 
 import pnp from "sp-pnp-js";
-import { Web } from  "sp-pnp-js";
 
-const _gabarits: any[] = [];
+import { Web,CamlQuery  } from  "sp-pnp-js";
+
+
 
 const _columns: IColumn[] = [
   {
@@ -58,7 +60,8 @@ const _columns: IColumn[] = [
 
 interface IGabaritContentProps {
   message: string;
-  urlTemplateLibrary: string;
+  urlTemplateLibrary: string;  
+  gabarits:any[];
   close: () => void;
   submit: (filename: string, gabarit: string) => void;
 }
@@ -68,61 +71,35 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
   public newFileName: string;
   private _selection: Selection;
   private urlWebTemplateLibrary: string;
+   
 
   constructor(props){
+    
     super(props);
-      
-    if (_gabarits.length === 0) {
+
+    /*
+    if (this.gabarits.length === 0) {
       for (let i = 0; i < 5; i++) {
-        _gabarits.push({
+        this.gabarits.push({
           key: i,
           name: 'Item ' + i,
           value: i
         });
       }
-    }
-    console.log(_gabarits);
+    }*/
+
+    console.log(this.props.gabarits);
     this._selection = new Selection({
       onSelectionChanged: () => this.setState({ selectionDetails: this._getSelectionDetails() })
     });
 
+    this.state = {
+      gabarits: this.props.gabarits,
+      selectionDetails: this._getSelectionDetails()
+    };
 
-    
-    this.urlWebTemplateLibrary = this.props.urlTemplateLibrary;
-    console.log("Retrieving templates from web " + this.urlWebTemplateLibrary)
-    if ( typeof this.urlWebTemplateLibrary != 'undefined' && this.urlWebTemplateLibrary){
-    
-      let webTemplate = new Web(this.urlWebTemplateLibrary)
-      
-
-      console.log("Retrieving templates form library at "+ this.urlWebTemplateLibrary);
-
-      webTemplate.getFolderByServerRelativeUrl('/sites/templates/templates') // Here comes a folder/subfolder path
-      .files
-      .expand('Files/ListItemAllFields') // For Metadata extraction
-      .select('Name')              // Fields to retrieve
-      .get().then(function(docTemplates) {
-          if (docTemplates.length != 0) {
-            for (let docTemplate of   docTemplates) {
-              console.log("doc template name " + docTemplate.Name);
-              _gabarits.push({
-                key: docTemplate.Id,
-                name: docTemplate.Name,
-                value: docTemplate.Name
-              });
-              console.log("_items pushd has  " + _gabarits.length);
-            }
-          }
-      }); 
-      
-      this.state = {
-        gabarits: _gabarits,
-        selectionDetails: this._getSelectionDetails()
-      };
-
-    }else{console.log('urlTemplateLibrary is empty please configure tenant Key');}      
     console.log(this.state.gabarits);      
-    console.log(_gabarits.length);
+    console.log(this.props.gabarits.length);
 
 
   }
@@ -141,8 +118,6 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
       showCloseButton={true}
     >
 
-
-
       <input        
         value={this.newFileName}
         onChange={this.HandleFileNameChange}
@@ -150,7 +125,7 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
       />
       <MarqueeSelection selection={this._selection}>
         <DetailsList
-          items={ gabarits }
+          items={ gabarits }          
           columns={ _columns }
           setKey='set'
           layoutMode={ DetailsListLayoutMode.fixedColumns }
@@ -159,6 +134,7 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
           ariaLabelForSelectionColumn='Toggle selection'
           ariaLabelForSelectAllCheckbox='Toggle selection for all items'
           onItemInvoked={ this._onItemInvoked }
+          selectionMode= { SelectionMode.single }
         />
       </MarqueeSelection>            
       <DialogFooter>
@@ -198,13 +174,15 @@ export default class SelectGabaritDialog extends BaseDialog {
   public gabaritName: string;
   public fileName: string;
   public urlTemplateLibrary: string;
+  public gabarits: any[];
 
   public render(): void {
     ReactDOM.render(<GabaritPickerDialogContent
       close={this.close}     
       urlTemplateLibrary = {this.urlTemplateLibrary}
       message={this.message}      
-      submit={this._submit}
+      submit={this._submit}      
+      gabarits={this.gabarits}
     />, this.domElement);
   }
 

@@ -1,0 +1,7 @@
+{
+    "Configs": {
+        "TemplateType": "Welcome back!",
+        "TemplatePath": "Loading user information...",
+        "TemplatesRetrieveQuery": "Logout"
+    }
+}
