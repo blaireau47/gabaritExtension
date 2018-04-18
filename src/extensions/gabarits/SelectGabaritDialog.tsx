@@ -138,7 +138,7 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
         />
       </MarqueeSelection>            
       <DialogFooter>
-        <Button text='Cancel' title='Cancel' onClick={this.props.close} />
+        <PrimaryButton text='Cancel' title='Cancel' onClick={this.props.close} />
         <PrimaryButton text='OK' title='OK' onClick={() => { this.props.submit(this.newFileName,this.selectedGabaritName); }} />
       </DialogFooter>
     </DialogContent>;
