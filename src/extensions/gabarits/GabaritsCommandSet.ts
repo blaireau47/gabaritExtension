@@ -67,12 +67,12 @@ export default class GabaritsCommandSet extends BaseListViewCommandSet<IGabarits
           //console.log("*************" + objConfig);
           this.urlWebTemplateLibrary = configInfo.templateLibraryUrl;
           
-          configInfo.getTemplatesData().then((_gabarit:any[]) => {
+          configInfo.getTemplatesData().then( _gabarit2 => {
                         
               if ( typeof this.urlWebTemplateLibrary != 'undefined' && this.urlWebTemplateLibrary){
                 const dialog: SelectGabaritDialog = new SelectGabaritDialog();
                 dialog.message = 'Select template:';
-                dialog.gabarits = _gabarit;                                  
+                dialog.gabarits = _gabarit2;                                  
                 dialog.urlTemplateLibrary =  this.urlWebTemplateLibrary;
                 dialog.show().then(() => { 
                                                 

@@ -34,7 +34,7 @@ import pnp from "sp-pnp-js";
 
 import { Web,CamlQuery  } from  "sp-pnp-js";
 
-
+const _gabarits: any[] = [];
 
 const _columns: IColumn[] = [
   {
@@ -71,22 +71,22 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
   public newFileName: string;
   private _selection: Selection;
   private urlWebTemplateLibrary: string;
-   
+  
 
   constructor(props){
     
     super(props);
 
-    /*
-    if (this.gabarits.length === 0) {
+    
+    if (_gabarits.length === 0) {
       for (let i = 0; i < 5; i++) {
-        this.gabarits.push({
+        _gabarits.push({
           key: i,
           name: 'Item ' + i,
           value: i
         });
       }
-    }*/
+    }
 
     console.log(this.props.gabarits);
     this._selection = new Selection({
@@ -94,7 +94,7 @@ class GabaritPickerDialogContent extends React.Component<IGabaritContentProps, {
     });
 
     this.state = {
-      gabarits: this.props.gabarits,
+      gabarits: _gabarits,
       selectionDetails: this._getSelectionDetails()
     };
 

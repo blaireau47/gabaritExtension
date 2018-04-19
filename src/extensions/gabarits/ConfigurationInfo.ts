@@ -92,7 +92,7 @@ export default class ConfigurationInfo {
     if ( typeof this.templateLibraryUrl != 'undefined' && this.templateLibraryUrl){
         
         let webTemplate = new Web(this.templateLibraryUrl)
-        webTemplate.lists.getByTitle("Templates").items.select("FileLeafRef","Title","Id").filter("Title eq 'pont'").get().then((docTemplates) => { 
+        webTemplate.lists.getByTitle("Templates").items.select("FileLeafRef","Title","Id").filter("ProjectType eq 'pont'").get().then((docTemplates) => { 
 
             if (docTemplates.length != 0) {
                 console.log(JSON.stringify(docTemplates, null, 4));
